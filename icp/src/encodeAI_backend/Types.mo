@@ -1,4 +1,6 @@
 import Map "mo:map/Map";
+import Time "mo:base/Time";
+import P "mo:base/Prelude";
 
 module Types {
     public type FileId = Text;
@@ -20,8 +22,8 @@ module Types {
     public type VectorData = {
         vectorId : Text; //gotten off chain
         documentId : FileId;
-        startPos : Nat;
-        endPos : Nat;
+        startPos : Int;
+        endPos : Int;
         vector : [Float];
     };
     public type State = {
@@ -38,9 +40,40 @@ module Types {
         };
     };
 
-   public type TextChunk = {
+    public type TextChunk = {
         text : Text;
         startPos : Nat;
         endPos : Nat;
+    };
+
+    /// Update call operations
+    public type Operation = {
+        #mint;
+        #burn;
+        #transfer;
+        #transferFrom;
+        #approve;
+    };
+    public type TransactionStatus = {
+        #succeeded;
+        #inprogress;
+        #failed;
+    };
+    /// Update call operation record fields
+    public type TxRecord = {
+        caller : ?Principal;
+        op : Operation;
+        index : Nat;
+        from : Principal;
+        to : Principal;
+        amount : Nat;
+        fee : Nat;
+        timestamp : Time.Time;
+        status : TransactionStatus;
+    };
+
+    public func unwrap<T>(x : ?T) : T = switch x {
+        case null { P.unreachable() };
+        case (?x_) { x_ };
     };
 };

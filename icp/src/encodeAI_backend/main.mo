@@ -1,276 +1,230 @@
 import Error "mo:base/Error";
+import Debug "mo:base/Debug";
+import Cycles "mo:base/ExperimentalCycles";
+import Principal "mo:base/Principal";
+
 import Nat "mo:base/Nat";
 import Text "mo:base/Text";
-import Principal "mo:base/Principal";
-import Cycles "mo:base/ExperimentalCycles";
-import Debug "mo:base/Debug";
 import Array "mo:base/Array";
-import Buffer "mo:base/Buffer";
-import Iter "mo:base/Iter";
-import Option "mo:base/Option";
+import Blob "mo:base/Blob";
+
+import DAO "./DAO";
+import Storage "./Storage";
+
 import Buckets "./Buckets";
-import Types "./Types"
+import DIP20Token "./DIP20";
+import DIP20Votes "./DIP20Votes";
+import Types "./Types";
+import HTTPTypes "./HTTPTypes";
 
-shared ({ caller = owner }) actor class AgentTemplate() = this {
-  type Bucket = Buckets.Bucket;
-  type FileId = Types.FileId;
-  type FileInfo = Types.FileInfo;
-  type FileData = Types.FileData;
-  type TextChunk = Types.TextChunk;
-  type VectorData = Types.VectorData;
-
-  type CanisterState<Bucket, Nat> = {
-    bucket : Bucket;
-    var size : Nat;
-  };
-
-  public type canister_id = Principal;
-  private let threshold = 2147483648; //  ~2GB
-  private let canisters : [var ?CanisterState<Bucket, Nat>] = Array.init(10, null);
-  private let cycleShare = 500_000_000_000;
-
-  // we could get document id from uri
-
-  public func addDocument(
-    //document information
-    title : Text,
-    content : Text,
-
-  ) : async ?Text {
-    let chunkSize = 1024;
-    let textSize = Text.size(content);
-    // Ensure proper handling of Nat and Int conversion to avoid traps
-    let chunkCount = if (textSize == 0) 0 else {
-      let textSizeInt = textSize;
-      let chunkSizeInt = chunkSize;
-      let sum = Nat.add(textSizeInt, chunkSizeInt);
-      let chunkCountInt = Nat.div(Nat.sub(sum, 1), chunkSizeInt);
-      chunkCountInt;
+shared ({ caller = owner }) actor class Main() {
+    type Bucket = Buckets.Bucket;
+    type DIP20Token = DIP20Token.DIP20Token;
+    type Proposal = DIP20Votes.Proposal;
+    type TxReceipt = DIP20Votes.TxReceipt;
+    type FileId = Types.FileId;
+    type FileInfo = Types.FileInfo;
+    type FileData = Types.FileData;
+    type TextChunk = Types.TextChunk;
+    type VectorData = Types.VectorData;
+    type CanisterState<Bucket, Nat> = {
+        bucket : Bucket;
+        var size : Nat;
     };
-    // FileInfo
-    let _fileInfo = {
-      fileId = "";
-      name = title;
-      chunkCount = chunkCount;
-      size = textSize;
+    public type canister_id = Principal;
+
+    private stable var dip20Canister : ?DIP20Token = null;
+    private let canisters : [var ?CanisterState<Bucket, Nat>] = Array.init(10, null);
+    private let cycleShare = 1_000_000_000_000;
+
+    //////////////////////////////////////////////////////////////////////////////
+    // DAO Token and Governance
+    ///////////////////////////////////////////////////////////////////////////////
+
+    public shared func deployDIP20() : async Principal {
+        let canister = await DAO.deployDIP20(cycleShare);
+        dip20Canister := ?canister;
+        return DAO.getDIP20Principal(canister);
     };
-    let bucket = await getEmptyBucket(textSize);
-    let documentID = await bucket.putText(_fileInfo);
-    switch (documentID) {
-      case (null) { throw Error.reject("Failed to store document") };
-      case (?docID) {
-        var i : Nat = 0;
-        //save document content/chunks to bucket
-        while (Nat.less(i, chunkCount)) {
-          let start = Nat.mul(i, chunkSize);
-          let end = Nat.min(Nat.mul(Nat.add(i, 1), chunkSize), textSize);
-          let chunkData = sliceText(content, start, end);
-          let chunkBlob = Text.encodeUtf8(chunkData);
-          let _ = await bucket.putChunks(docID, i, chunkBlob);
-          i := Nat.add(i, 1);
+
+    public query func getDIP20Principal() : async ?Principal {
+        switch (dip20Canister) {
+            case (?canister) { return ?DAO.getDIP20Principal(canister) };
+            case null { return null };
         };
-        return ?docID;
-      };
-    };
-  };
-
-  public func addVector(
-    cid : Principal,
-    docID : Text,
-    vectorId : Text,
-    start : Nat,
-    end : Nat,
-    vector : [Float],
-  ) : async ?Text {
-
-    let vectorData = {
-
-      vectorId = vectorId;
-      documentId = docID;
-      startPos = start;
-      endPos = end;
-      vector = vector;
-    };
-    let maybeBucket : ?Bucket = await getBucket(cid);
-    switch (maybeBucket) {
-      case (null) { throw Error.reject("Failed to get bucket") };
-      case (?b) {
-        let _ = await b.putVector(vectorData);
-        return ?vectorId;
-      };
     };
 
-  };
-
-  public func getAllVectors(cid : Principal) : async ?{ items : [VectorData] } {
-    do ? {
-      let b : Bucket = (await getBucket(cid))!;
-      let vectorList = await b.getAllVectors();
-      return ?vectorList;
-    };
-  };
-
-  public func getFileInfo(cid : Principal) : async ?[FileInfo] {
-    do ? {
-      let b : Bucket = (await getBucket(cid))!;
-      let fileInfoList = await b.getTextInfo();
-      return ?fileInfoList;
-    };
-  };
-
-  public func getDocumentChunks(documentID : FileId, cid : Principal) : async ?Text {
-    let fileInfo = await getFileInfo(cid);
-    switch (fileInfo) {
-      case (?fileInfoList) {
-        let documentInfo = Array.find(
-          fileInfoList,
-          func(info : FileInfo) : Bool {
-            info.fileId == documentID;
-          },
-        );
-        switch (documentInfo) {
-          case (?docInfo) {
-            var text = "";
-            for (chunkNum in Iter.range(0, docInfo.chunkCount - 1)) {
-              let chunk = await getFileChunk(documentID, chunkNum, cid);
-              switch (chunk) {
-                case (?chunkText) {
-                  text := text # chunkText;
-                };
-                case null {};
-              };
+    public shared (msg) func mintToken() : async TxReceipt {
+        switch (dip20Canister) {
+            case (?canister) {
+                return await DAO.mintToken(canister, msg.caller);
             };
-            return ?text;
-          };
-          case null { return null };
+            case null { throw Error.reject("DIP20 token not deployed.") };
         };
-      };
-      case null { return null };
     };
-  };
 
-  // get file chunk
-  public func getFileChunk(fileId : FileId, chunkNum : Nat, cid : Principal) : async ?Text {
-    do ? {
-      let b : Bucket = (await getBucket(cid))!;
-      return await b.getChunks(fileId, chunkNum);
-
-    };
-  };
-
-  // get a list of files from all canisters
-  public func getAllFiles() : async [FileData] {
-    let buff = Buffer.Buffer<FileData>(0);
-    for (i in Iter.range(0, canisters.size() - 1)) {
-      let c : ?CanisterState<Bucket, Nat> = canisters[i];
-      switch c {
-        case null {};
-        case (?c) {
-          let bi = await c.bucket.getTextInfo();
-          for (j in Iter.range(0, bi.size() - 1)) {
-            buff.add(bi[j]);
-          };
+    public shared (msg) func createProposal(method : Text, args : [Blob], threshold : Nat) : async Nat {
+        switch (dip20Canister) {
+            case (?canister) {
+                return await DAO.createProposal(canister, msg.caller, method, args, threshold);
+            };
+            case null { throw Error.reject("DIP20 token not deployed.") };
         };
-      };
-    };
-    Buffer.toArray(buff);
-  };
-
-  private func newEmptyBucket() : async Bucket {
-    Cycles.add<system>(cycleShare);
-    let b = await Buckets.Bucket();
-    let s = await b.getSize();
-    Debug.print("new canister principal is " # debug_show (Principal.toText(Principal.fromActor(b))));
-    Debug.print("initial size is " # debug_show (s));
-    var v : CanisterState<Bucket, Nat> = {
-      bucket = b;
-      var size = s;
     };
 
-    var foundSlot = false;
-    var i = 0;
-    while (i < canisters.size() and foundSlot == false) {
-      if (Option.isNull(canisters[i])) {
-        canisters[i] := ?v;
-        foundSlot := true;
-      };
-      i := i + 1;
-    };
-
-    if (foundSlot == false) {
-      canisters[0] := ?v;
-    };
-
-    return b;
-  };
-
-  private func getEmptyBucket(s : Nat) : async Bucket {
-    let cs : ?(?CanisterState<Bucket, Nat>) = Array.find<?CanisterState<Bucket, Nat>>(
-      Array.freeze(canisters),
-      func(cs : ?CanisterState<Bucket, Nat>) : Bool {
-        switch (cs) {
-          case null { false };
-          case (?cs) {
-            Debug.print("found canister with principal..." # debug_show (Principal.toText(Principal.fromActor(cs.bucket))));
-            // calculate if there is enough space in canister for the new file.
-            cs.size + s < threshold;
-          };
+    public shared (msg) func vote(proposalId : Nat, support : Bool) : async () {
+        switch (dip20Canister) {
+            case (?canister) {
+                await DAO.vote(canister, msg.caller, proposalId, support);
+            };
+            case null { throw Error.reject("DIP20 token not deployed.") };
         };
-      },
-    );
-    let eb : ?Bucket = do ? {
-      let c = cs!;
-      let nb : ?Bucket = switch (c) {
-        case (?c) { ?(c.bucket) };
-        case _ { null };
-      };
-
-      nb!;
     };
-    let c : Bucket = switch (eb) {
-      case null { await newEmptyBucket() };
-      case (?eb) { eb };
-    };
-    c;
-  };
 
-  private func sliceText(text : Text, start : Nat, end : Nat) : Text {
-    var slicedText = "";
-    var i = start;
-    while (Nat.less(i, end)) {
-      let char = Text.fromChar(Text.toArray(text)[i]);
-      slicedText := Text.concat(slicedText, char);
-      i := Nat.add(i, 1);
-    };
-    slicedText;
-  };
-
-  func getBucket(cid : Principal) : async ?Bucket {
-    let cs : ?(?CanisterState<Bucket, Nat>) = Array.find<?CanisterState<Bucket, Nat>>(
-      Array.freeze(canisters),
-      func(cs : ?CanisterState<Bucket, Nat>) : Bool {
-        switch (cs) {
-          case null { false };
-          case (?cs) {
-            Debug.print("found canister with principal..." # debug_show (Principal.toText(Principal.fromActor(cs.bucket))));
-            Principal.equal(Principal.fromActor(cs.bucket), cid);
-          };
+    public shared func closeProposal(proposalId : Nat) : async () {
+        switch (dip20Canister) {
+            case (?canister) {
+                ignore await DAO.closeProposal(canister, proposalId);
+            };
+            case null { throw Error.reject("DIP20 token not deployed.") };
         };
-      },
-    );
-    let bucket : ?Bucket = do ? {
-      let c = cs!;
-      let nb : ?Bucket = switch (c) {
-        case (?c) { ?(c.bucket) };
-        case _ { null };
-      };
-
-      nb!;
     };
-    return bucket;
-  };
 
-  public shared ({ caller = _ }) func wallet_receive() : async () {
-    ignore Cycles.accept<system>(Cycles.available());
-  };
+    public shared func getProposalStatus(proposalId : Nat) : async {
+        status : ?DIP20Votes.ProposalState;
+    } {
+        switch (dip20Canister) {
+            case (?canister) {
+                return {
+                    status = await DAO.getProposalStatus(canister, proposalId);
+                };
+            };
+            case null { throw Error.reject("DIP20 token not deployed.") };
+        };
+    };
+
+    //////////////////////////////////////////////////////////////////////////////
+    // Decentralized Storage
+    ///////////////////////////////////////////////////////////////////////////////
+
+    public func addDocument(title : Text, content : Text) : async (?Principal, ?Text) {
+        return await Storage.addDocument(canisters, title, content);
+    };
+
+    public func addVector(cid : Principal, docID : Text, vectorId : Text, start : Nat, end : Nat, vector : [Float]) : async ?Text {
+        return await Storage.addVector(canisters, cid, docID, vectorId, start, end, vector);
+    };
+
+    public shared func getPrincipal() : async ?Text {
+        return await Storage.getPrincipal(canisters);
+    };
+
+    public func getVectors(cid : Principal) : async ?{ items : [VectorData] } {
+        return await Storage.getVectors(canisters, cid);
+    };
+
+    public func getChunks(documentID : FileId, cid : Principal) : async ?Text {
+        return await Storage.getChunks(canisters, documentID, cid);
+    };
+
+    public func getChunk(fileId : FileId, chunkNum : Nat, cid : Principal) : async ?Text {
+        return await Storage.getChunk(canisters, fileId, chunkNum, cid);
+    };
+
+    public func getIndexInfo(cid : Principal) : async ?[FileInfo] {
+        return await Storage.getIndexInfo(canisters, cid);
+    };
+
+    public shared func getDocumentID(vectorId : Text, cid : Principal) : async ?Text {
+        return await Storage.getDocumentID(canisters, vectorId, cid);
+    };
+
+    public shared func titleToDocumentID(title : Text) : async ?Text {
+        return await Storage.titleToDocumentID(canisters, title);
+    };
+
+    public shared func documentIDToTitle(documentID : Text) : async ?Text {
+        return await Storage.documentIDToTitle(canisters, documentID);
+    };
+
+    //function to transform the response
+    public query func transform(raw : HTTPTypes.TransformArgs) : async HTTPTypes.CanisterHttpResponsePayload {
+        let transformed : HTTPTypes.CanisterHttpResponsePayload = {
+            status = raw.response.status;
+            body = raw.response.body;
+            headers = [
+                {
+                    name = "Content-Security-Policy";
+                    value = "default-src 'self'";
+                },
+                { name = "Referrer-Policy"; value = "strict-origin" },
+                { name = "Permissions-Policy"; value = "geolocation=(self)" },
+                {
+                    name = "Strict-Transport-Security";
+                    value = "max-age=63072000";
+                },
+                { name = "X-Frame-Options"; value = "DENY" },
+                { name = "X-Content-Type-Options"; value = "nosniff" },
+            ];
+        };
+        transformed;
+    };
+
+    public func  createEmbeddings(words: Text) : async Text {
+        let ic : HTTPTypes.IC = actor ("aaaaa-aa");
+        let url = "https://886e-197-210-84-76.ngrok-free.app/api/embed";
+        let idempotency_key : Text = generateUUID();
+        let request_headers = [
+            { name = "Content-Type"; value = "application/json" },
+            { name = "Idempotency-Key"; value = idempotency_key },
+        ];
+
+        let request_body_json : Text = "{ \"words\" : \"" # words # "\" }";
+        let request_body_as_Blob : Blob = Text.encodeUtf8(request_body_json);
+        let request_body_as_nat8 : [Nat8] = Blob.toArray(request_body_as_Blob); // e.g [34, 34,12, 0]
+
+        // 2.2.1 Transform context
+        let transform_context : HTTPTypes.TransformContext = {
+            function = transform;
+            context = Blob.fromArray([]);
+        };
+
+        // 2.3 The HTTP request
+        let http_request : HTTPTypes.HttpRequestArgs = {
+            url = url;
+            max_response_bytes = null;
+            headers = request_headers;
+            body = ?request_body_as_nat8;
+            method = #post;
+            transform = ?transform_context;
+        };
+
+        //3. ADD CYCLES TO PAY FOR HTTP REQUEST
+        Cycles.add<system>(21_850_258_000);
+
+        //4. MAKE HTTP REQUEST AND WAIT FOR RESPONSE
+        //Since the cycles were added above, you can just call the management canister with HTTPS outcalls below
+        let http_response : HTTPTypes.HttpResponsePayload = await ic.http_request(http_request);
+
+        //5. DECODE THE RESPONSE
+        let response_body : Blob = Blob.fromArray(http_response.body);
+        let decoded_text : Text = switch (Text.decodeUtf8(response_body)) {
+            case (null) { "No value returned" };
+            case (?y) { y };
+        };
+        //6. RETURN RESPONSE OF THE BODY
+        let result : Text = decoded_text;
+        result;
+    };
+
+    func generateUUID() : Text {
+        "UUID-123456789";
+    };
+
+    // Cycles Functions
+    public shared ({ caller = caller }) func wallet_receive() : async () {
+        ignore Cycles.accept<system>(Cycles.available());
+        Debug.print("intital cycles deposited by " # debug_show (caller));
+    };
+
 };

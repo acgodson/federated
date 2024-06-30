@@ -113,22 +113,30 @@ actor class Bucket() = this {
 
     //Functiom to add vector to state
     public func putVector(data : VectorData) : async ?() {
-        // vectorId : Text, chunkId : Text, docId : Text, startPos : Nat, endPos : Nat, vector : [Int]
-        let vectorData = {
-            vectorId = data.vectorId;
-            documentId = data.documentId;
-            startPos = data.startPos;
-            endPos = data.endPos;
-            vector = data.vector;
-        };
-        do ? {
-            ignore Map.put(
-                state.vectors,
-                thash,
-                data.vectorId,
-                vectorData,
-            );
-            updateFileInfo(data.documentId, data.vectorId);
+        let existingVector = Map.get(state.vectors, thash, data.vectorId);
+        switch (existingVector) {
+            case (null) {
+                // Vector does not exist, so add it
+                let vectorData = {
+                    vectorId = data.vectorId;
+                    documentId = data.documentId;
+                    startPos = data.startPos;
+                    endPos = data.endPos;
+                    vector = data.vector;
+                };
+                do ? {
+                    ignore Map.put(
+                        state.vectors,
+                        thash,
+                        data.vectorId,
+                        vectorData,
+                    );
+                    updateFileInfo(data.documentId, data.vectorId);
+                };
+            };
+            case (?_) {
+                return null;
+            };
         };
     };
 
@@ -183,6 +191,14 @@ actor class Bucket() = this {
             };
         };
         Buffer.toArray(b);
+    };
+
+    public query func vectorIDToDocumentID(vectorId : Text) : async ?Text {
+
+        do ? {
+            let v = Map.get(vectorIdToDocId, thash, vectorId)!;
+            return ?v;
+        };
     };
 
     public func wallet_receive() : async { accepted : Nat64 } {
