@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Clock, Hourglass, Loader } from "lucide-react";
 
 import { Button } from "../atoms/button";
 import { Separator } from "../atoms/separator";
@@ -11,8 +12,10 @@ const IntentHead = () => {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex gap-4 items-center">
-        <div className="relative w-fit">title icon</div>
-        <h3 className="text-lg font-semibold text-gray-800">document title</h3>
+        <div className="relative w-fit">
+          <Hourglass />
+        </div>
+        <h3 className="text-lg font-semibold text-gray-800">Proposal</h3>
       </div>
       <div className="flex gap-2 bg-slate-200 p-1 rounded-lg text-gray-700">
         any order information about document
