@@ -50,7 +50,7 @@ function App() {
     const _principal = await encodeAI_backend.getPrincipal();
 
     if (_principal[0]) {
-      setPrincipal(_principal[0])
+      setPrincipal(_principal[0]);
       const principal = Principal.fromText(_principal[0]);
 
       const isCatalog = await loadIsCatalog(principal);
@@ -66,7 +66,7 @@ function App() {
       let id: string | undefined;
       let documentResult;
       try {
-        documentResult = await indexInstance.upsertDocument(title, text);
+        documentResult = await indexInstance.upsertDocument("", title, text);
 
         id = documentResult.id;
 

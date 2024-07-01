@@ -1,3 +1,4 @@
+// # main.mo
 import Error "mo:base/Error";
 import Debug "mo:base/Debug";
 import Cycles "mo:base/ExperimentalCycles";
@@ -8,14 +9,14 @@ import Text "mo:base/Text";
 import Array "mo:base/Array";
 import Blob "mo:base/Blob";
 
-import DAO "./DAO";
-import Storage "./Storage";
+import DAO "./DAO/DAO";
+import Storage "./Storage/Storage";
 
-import Buckets "./Buckets";
-import DIP20Token "./DIP20";
-import DIP20Votes "./DIP20Votes";
-import Types "./Types";
-import HTTPTypes "./HTTPTypes";
+import Buckets "./Storage/Buckets";
+import DIP20Token "./DAO/DIP20";
+import DIP20Votes "./DAO/DIP20Votes";
+import Types "./Utils/Types";
+import HTTPTypes "./Utils/HTTPTypes";
 
 shared ({ caller = owner }) actor class Main() {
     type Bucket = Buckets.Bucket;
@@ -170,7 +171,7 @@ shared ({ caller = owner }) actor class Main() {
         transformed;
     };
 
-    public func  createEmbeddings(words: Text) : async Text {
+    public func createEmbeddings(words : Text) : async Text {
         let ic : HTTPTypes.IC = actor ("aaaaa-aa");
         let url = "https://886e-197-210-84-76.ngrok-free.app/api/embed";
         let idempotency_key : Text = generateUUID();

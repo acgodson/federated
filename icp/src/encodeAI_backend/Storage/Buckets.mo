@@ -1,5 +1,7 @@
-import Map "mo:map/Map";
-import { thash } "mo:map/Map";
+// # Buckets.mo
+
+import Cycles "mo:base/ExperimentalCycles";
+
 import Nat "mo:base/Nat";
 import Text "mo:base/Text";
 import Random "mo:base/Random";
@@ -8,9 +10,13 @@ import Nat64 "mo:base/Nat64";
 import Debug "mo:base/Debug";
 import Buffer "mo:base/Buffer";
 import Blob "mo:base/Blob";
-import Types "./Types";
+
 import Prim "mo:prim";
-import Cycles "mo:base/ExperimentalCycles";
+import Map "mo:map/Map";
+import { thash } "mo:map/Map";
+
+import Types "../Utils/Types";
+
 
 actor class Bucket() = this {
 

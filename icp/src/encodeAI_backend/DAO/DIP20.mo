@@ -1,17 +1,19 @@
 import Principal "mo:base/Principal";
+import Error "mo:base/Error";
+
 import Nat "mo:base/Nat";
-import Types "./Types";
 import Time "mo:base/Time";
 import HashMap "mo:base/HashMap";
 import Result "mo:base/Result";
 import Array "mo:base/Array";
 import Map "mo:map/Map";
 import { nhash } "mo:map/Map";
-import Error "mo:base/Error";
-import DIP20Votes "./DIP20Votes";
 import Debug "mo:base/Debug";
 import Cycles "mo:base/ExperimentalCycles";
 import Nat64 "mo:base/Nat64";
+
+import DIP20Votes "./DIP20Votes";
+import Types "../Utils/Types";
 
 shared ({ caller = owner }) actor class DIP20Token() {
 
@@ -131,7 +133,7 @@ shared ({ caller = owner }) actor class DIP20Token() {
         return await DIP20Votes.createProposal(proposals, proposalCounter, proposal);
     };
 
-    public shared (_) func vote(proposalId : Nat, support : Bool, voter: Principal) : async () {
+    public shared (_) func vote(proposalId : Nat, support : Bool, voter : Principal) : async () {
         let balance = await balanceOf(voter);
         if (balance == 0) {
             throw Error.reject("Insufficient voting power");

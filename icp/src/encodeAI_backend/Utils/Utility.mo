@@ -1,11 +1,13 @@
 import Principal "mo:base/Principal";
+import Cycles "mo:base/ExperimentalCycles";
+
 import Nat "mo:base/Nat";
 import Text "mo:base/Text";
 import Debug "mo:base/Debug";
-import Buckets "./Buckets";
 import Option "mo:base/Option";
 import Array "mo:base/Array";
-import Cycles "mo:base/ExperimentalCycles";
+
+import Buckets "../Storage/Buckets";
 
 module {
 

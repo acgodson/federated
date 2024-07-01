@@ -14,6 +14,7 @@ import {
 import { LocalDocumentResult } from "./LocalDocumentResult";
 import { LocalDocument } from "./LocalDocument";
 import { encodeAI_backend } from "../../../../declarations/encodeAI_backend";
+import { Principal } from "@dfinity/principal";
 
 export interface DocumentQueryOptions {
   maxDocuments?: number;
@@ -123,30 +124,49 @@ export class LocalDocumentIndex extends LocalIndex {
     }
   }
 
+  public async closePropsal(
+    cannisterId: string,
+    docTitle: string,
+    docId: string
+  ): Promise<any> {
+    const recoveredChunks = await encodeAI_backend.getChunks(
+      docId,
+      Principal.fromText(cannisterId)
+    );
+
+    // all the documents saved
+    if (recoveredChunks[0]) {
+      const content = recoveredChunks[0];
+      const result = await this.upsertDocument(docId, docTitle, content);
+      return result;
+    }
+  }
+
   public async upsertDocument(
+    docId: string,
     title: string,
     text: string,
     metadata?: Record<string, MetadataTypes>
   ): Promise<LocalDocument> {
     // Ensure embeddings configured
 
-    let documentId;
+    let documentId = docId;
 
     //save entire text document in cannister
-    const response = await encodeAI_backend.addDocument(title, text);
+    // const response = await encodeAI_backend.addDocument(title, text);
 
-    if (response && response.length > 0) {
-      documentId = response[1][0];
-    }
+    // if (response && response.length > 0) {
+    //   documentId = response[1][0];
+    // }
 
     if (!documentId) {
-      throw new Error("failed to add document to cannister");
+      throw new Error("No document ID given");
     }
 
     ////////////////////////////////////////////////////////////////
     // Text Splitting for Vector Embeddings. Please note this is
     // different from the document chunks in the cannister which
-    // was saved in chunks according to space left in a storage bucket
+    // could've been splitted into chunks according to space left in a storage bucket
     ///////////////////////////////////////////////////////////////
 
     // Split text into chunks

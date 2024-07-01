@@ -1,18 +1,15 @@
+// # Storage.mo
 import Error "mo:base/Error";
 import Principal "mo:base/Principal";
-import Cycles "mo:base/ExperimentalCycles";
 
 import Nat "mo:base/Nat";
 import Text "mo:base/Text";
-import Blob "mo:base/Blob";
 import Array "mo:base/Array";
 import Iter "mo:base/Iter";
 
 import Buckets "./Buckets";
-import { sliceText; getEmptyBucket; getBucket } "./Utility";
-
-import HTTPTypes "./HTTPTypes";
-import Types "./Types";
+import { sliceText; getEmptyBucket; getBucket } "../Utils/Utility";
+import Types "../Utils/Types";
 
 module {
     type Bucket = Buckets.Bucket;
@@ -225,7 +222,7 @@ module {
         return null;
     };
 
-    func generateUUID() : Text {
-        "UUID-123456789";
-    };
+    // func generateUUID() : Text {
+    //     "UUID-123456789";
+    // };
 };

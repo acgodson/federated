@@ -24,11 +24,13 @@ const IntentHead = () => {
   );
 };
 
-const IntentBody = () => {
+const IntentBody = ({ onSubmit }: { onSubmit: Function }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleButtonClick = async () => {
     setIsSubmitting(true);
+
+    await onSubmit();
 
     setTimeout(() => {
       setIsSubmitting(false);
@@ -63,10 +65,10 @@ const IntentBody = () => {
           <Button
             variant={"default"}
             className={cn("bg-zinc-800 text-white hover:bg-zinc-700 w-full")}
-            // onClick={handleButtonClick}
+            onClick={handleButtonClick}
             disabled={isSubmitting}
           >
-            Close Proposal
+            {isSubmitting ? "Closing..." : "Close Proposal"}
           </Button>
         </div>
       </div>
