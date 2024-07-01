@@ -221,8 +221,4 @@ module {
         };
         return null;
     };
-
-    // func generateUUID() : Text {
-    //     "UUID-123456789";
-    // };
 };

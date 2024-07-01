@@ -17,7 +17,7 @@ module DIP20Votes {
         id : Nat;
         proposer : Principal;
         method : Text;
-        args : [Blob];
+        documentID : Text;
         var state : ProposalState;
         var votesFor : Nat;
         var votesAgainst : Nat;
@@ -32,7 +32,7 @@ module DIP20Votes {
             id = proposalCounter;
             proposer = proposal.proposer;
             method = proposal.method;
-            args = proposal.args;
+            documentID = proposal.documentID;
             var state = #active;
             var votesFor = 0;
             var votesAgainst = 0;

@@ -64,10 +64,25 @@ shared ({ caller = owner }) actor class Main() {
         };
     };
 
-    public shared (msg) func createProposal(method : Text, args : [Blob], threshold : Nat) : async Nat {
+    private func _createProposal(method : Text, documentId : Text, threshold : Nat, caller : Principal) : async Nat {
         switch (dip20Canister) {
             case (?canister) {
-                return await DAO.createProposal(canister, msg.caller, method, args, threshold);
+                return await DAO.createProposal(canister, caller, method, documentId, threshold);
+            };
+            case null { throw Error.reject("DIP20 token not deployed.") };
+        };
+    };
+
+    public shared (_) func getProposals() : async [{
+        id : Nat;
+        method : Text;
+        documentID : Text;
+        proposer : Principal;
+        threshold : Nat;
+    }] {
+        switch (dip20Canister) {
+            case (?canister) {
+                return await DAO.getProposals(canister);
             };
             case null { throw Error.reject("DIP20 token not deployed.") };
         };
@@ -108,12 +123,76 @@ shared ({ caller = owner }) actor class Main() {
     // Decentralized Storage
     ///////////////////////////////////////////////////////////////////////////////
 
-    public func addDocument(title : Text, content : Text) : async (?Principal, ?Text) {
-        return await Storage.addDocument(canisters, title, content);
+    public shared (msg) func addDocument(title : Text, content : Text) : async ?(Principal, Text, Nat) {
+        let result = await Storage.addDocument(canisters, title, content);
+        var response : ?(Principal, Text, Nat) = null;
+
+        // Creating a proposal
+        switch (result) {
+            case (?principal, ?docID) {
+                // Use a method and threshold for the proposal
+                let method = "addVector";
+                let threshold = 1; // test threshold value
+
+                // Create the proposal
+                let proposalId = await _createProposal(method, docID, threshold, msg.caller);
+                response := ?(principal, docID, proposalId);
+            };
+            case (_) {
+                // Handle error case if document addition failed
+                throw Error.reject("Failed to add document.");
+            };
+        };
+        return response;
     };
 
     public func addVector(cid : Principal, docID : Text, vectorId : Text, start : Nat, end : Nat, vector : [Float]) : async ?Text {
-        return await Storage.addVector(canisters, cid, docID, vectorId, start, end, vector);
+        // Fetch all proposals
+        let proposals = await getProposals();
+        Debug.print("Existing proposals: " # debug_show (proposals));
+        Debug.print("Document ID being checked: " # docID);
+
+        var matchedProposal : ?{
+            id : Nat;
+            method : Text;
+            documentID : Text;
+            proposer : Principal;
+            threshold : Nat;
+        } = null;
+
+        // Find the proposal matching the document ID
+        label l {
+            for (proposal in proposals.vals()) {
+                Debug.print("Checking proposal: " # debug_show (proposal));
+                if (proposal.documentID == docID) {
+                    matchedProposal := ?proposal;
+                    Debug.print("Matched proposal found: " # debug_show (proposal));
+                    break l();
+                };
+            };
+        };
+
+        // Check if a matched proposal is found and its state is approved
+        switch (matchedProposal) {
+            case (null) {
+                // No proposal found for the given document ID
+                throw Error.reject("No proposal found for the given document ID.");
+            };
+            case (?proposal) {
+                // Check if the proposal state is approved
+                let proposalStatus = await getProposalStatus(proposal.id);
+                switch (proposalStatus.status) {
+                    case (? #approved) {
+                        // Proceed to add the vector if the proposal is approved
+                        return await Storage.addVector(canisters, cid, docID, vectorId, start, end, vector);
+                    };
+                    case (_) {
+                        // Proposal state is not approved
+                        throw Error.reject("Proposal for the document is not approved yet.");
+                    };
+                };
+            };
+        };
     };
 
     public shared func getPrincipal() : async ?Text {

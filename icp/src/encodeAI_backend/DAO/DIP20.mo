@@ -42,7 +42,7 @@ shared ({ caller = owner }) actor class DIP20Token() {
         id : Nat;
         proposer : Principal;
         method : Text;
-        args : [Blob];
+        documentID : Text;
         var state : ProposalState;
         var votesFor : Nat;
         var votesAgainst : Nat;
@@ -114,16 +114,18 @@ shared ({ caller = owner }) actor class DIP20Token() {
         };
     };
 
-    public func createProposal(method : Text, args : [Blob], threshold : Nat, proposer : Principal) : async Nat {
-        if (activeProposal == true) {
-            throw Error.reject("Another proposal is currently active.");
-        };
+    public func createProposal(method : Text, documentID : Text, threshold : Nat, proposer : Principal) : async Nat {
+
+        //Uncomment to allow only a single proposal at a time
+        // if (activeProposal == true) {
+        //     throw Error.reject("Another proposal is currently active.");
+        // };
         proposalCounter += 1;
         let proposal : Proposal = {
             id = proposalCounter;
             proposer;
             method = method;
-            args = args;
+            documentID = documentID;
             var state = #active;
             var votesFor = 0;
             var votesAgainst = 0;
@@ -131,6 +133,91 @@ shared ({ caller = owner }) actor class DIP20Token() {
         };
         activeProposal := true;
         return await DIP20Votes.createProposal(proposals, proposalCounter, proposal);
+    };
+
+    // public shared func getProposals() : async [{
+    //     id : Nat;
+    //     proposer : Principal;
+    //     documentID : Text;
+    //     method : Text;
+    //     threshold : Nat;
+    // }] {
+    //     var activeProposals : [{
+    //         id : Nat;
+    //         proposer : Principal;
+    //         method : Text;
+    //         documentID : Text;
+    //         threshold : Nat;
+    //     }] = [];
+    //     for ((key, proposal) in Map.entries(proposals)) {
+    //         switch (proposal.state) {
+    //             case (#active) {
+    //                 let sharedProposal : {
+    //                     id : Nat;
+    //                     proposer : Principal;
+    //                     documentID : Text;
+    //                     method : Text;
+    //                     threshold : Nat;
+    //                 } = {
+    //                     id = proposal.id;
+    //                     proposer = proposal.proposer;
+    //                     method = proposal.method;
+    //                     documentID = proposal.documentID;
+    //                     threshold = proposal.threshold;
+    //                 };
+    //                 activeProposals := Array.append(activeProposals, [sharedProposal]);
+    //             };
+    //             case (_) {};
+    //         };
+    //     };
+    //     return activeProposals;
+    // };
+
+    public shared func getProposals(states : [Nat]) : async [{
+        id : Nat;
+        proposer : Principal;
+        documentID : Text;
+        method : Text;
+        threshold : Nat;
+    }] {
+        var selectedProposals : [{
+            id : Nat;
+            proposer : Principal;
+            method : Text;
+            documentID : Text;
+            threshold : Nat;
+        }] = [];
+
+        let comparator = func(a : Nat, b : Nat) : Bool {
+            return a == b;
+        };
+
+        for ((key, proposal) in Map.entries(proposals)) {
+            let proposalState : Nat = switch (proposal.state) {
+                case (#active) { 0 };
+                case (#approved) { 1 };
+                case (#cancelled) { 2 };
+                // Add other states if necessary
+            };
+
+            if (Array.indexOf(proposalState, states, comparator) != null) {
+                let sharedProposal : {
+                    id : Nat;
+                    proposer : Principal;
+                    documentID : Text;
+                    method : Text;
+                    threshold : Nat;
+                } = {
+                    id = proposal.id;
+                    proposer = proposal.proposer;
+                    method = proposal.method;
+                    documentID = proposal.documentID;
+                    threshold = proposal.threshold;
+                };
+                selectedProposals := Array.append(selectedProposals, [sharedProposal]);
+            };
+        };
+        return selectedProposals;
     };
 
     public shared (_) func vote(proposalId : Nat, support : Bool, voter : Principal) : async () {

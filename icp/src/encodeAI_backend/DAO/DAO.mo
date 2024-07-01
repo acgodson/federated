@@ -23,8 +23,18 @@ module {
         return await dip20Canister.mint(to, baseAmount);
     };
 
-    public func createProposal(dip20Canister : DIP20Token, from : Principal, method : Text, args : [Blob], threshold : Nat) : async Nat {
-        return await dip20Canister.createProposal(method, args, threshold, from);
+    public func createProposal(dip20Canister : DIP20Token, from : Principal, method : Text, documentId : Text, threshold : Nat) : async Nat {
+        return await dip20Canister.createProposal(method, documentId, threshold, from);
+    };
+
+    public func getProposals(dip20Canister : DIP20Token) : async [{
+        id : Nat;
+        method : Text;
+        documentID : Text;
+        proposer : Principal;
+        threshold : Nat;
+    }] {
+        return await dip20Canister.getProposals([0,1]);
     };
 
     public func vote(dip20Canister : DIP20Token, from : Principal, proposalId : Nat, support : Bool) : async () {

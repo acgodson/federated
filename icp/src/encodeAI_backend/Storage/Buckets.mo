@@ -60,7 +60,6 @@ actor class Bucket() = this {
     };
 
     // Function to create file info
-
     private func createFileInfo(fileId : Text, fi : FileInfo) : ?FileId {
         switch (Map.get(state.files, thash, fileId)) {
             case (?_) { /* error -- ID already taken. */ return null };
