@@ -5,8 +5,8 @@ import Header from "../organisms/header";
 
 const LayoutWrapper = ({ children }: { children: React.ReactNode }) => {
   return (
-    <html lang="en">
-      <body>
+    // <html lang="en">
+      <div>
         <main className="flex w-screen">
           <AuroraBackground className="flex flex-col gap-2 w-full">
             <Header />
@@ -14,9 +14,9 @@ const LayoutWrapper = ({ children }: { children: React.ReactNode }) => {
           </AuroraBackground>
         </main>
         <Toaster />
-      </body>
-    </html>
-  );
+      </div>
+    // </html>
+  );  
 };
 
 export default LayoutWrapper;

@@ -28,11 +28,14 @@ type ProposalState =
  };
 type Main = 
  service {
-   addDocument: (text, text) -> (opt principal, opt text);
+   addDocument: (text, text) -> (opt record {
+                                       principal;
+                                       text;
+                                       nat;
+                                     });
    addVector: (principal, text, text, nat, nat, vec float64) -> (opt text);
    closeProposal: (nat) -> ();
    createEmbeddings: (text) -> (text);
-   createProposal: (text, vec blob, nat) -> (nat);
    deployDIP20: () -> (principal);
    documentIDToTitle: (text) -> (opt text);
    getChunk: (FileId__1, nat, principal) -> (opt text);
@@ -42,6 +45,15 @@ type Main =
    getIndexInfo: (principal) -> (opt vec FileInfo);
    getPrincipal: () -> (opt text);
    getProposalStatus: (nat) -> (record {status: opt ProposalState;});
+   getProposals: () ->
+    (vec
+      record {
+        documentID: text;
+        id: nat;
+        method: text;
+        proposer: principal;
+        threshold: nat;
+      });
    getVectors: (principal) -> (opt record {items: vec VectorData;});
    mintToken: () -> (TxReceipt);
    titleToDocumentID: (text) -> (opt text);

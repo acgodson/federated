@@ -7,34 +7,39 @@ import { Separator } from "../atoms/separator";
 import { cn } from "../../../utils";
 
 import { Alert, AlertDescription } from "../atoms/alert";
+import { Proposal } from "../organisms/docs-feed";
 
-const IntentHead = () => {
+const IntentHead = ({ proposal }: { proposal: Proposal | any }) => {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex gap-4 items-center">
         <div className="relative w-fit">
           <Hourglass />
         </div>
-        <h3 className="text-lg font-semibold text-gray-800">Proposal</h3>
+        <h3 className="text-lg font-semibold text-gray-800">
+          Proposal {(proposal as Proposal)?.id}{" "}
+        </h3>
       </div>
       <div className="flex gap-2 bg-slate-200 p-1 rounded-lg text-gray-700">
-        any order information about document
+        {(proposal as Proposal)?.documentTitle}
       </div>
     </div>
   );
 };
 
-const IntentBody = ({ onSubmit }: { onSubmit: Function }) => {
+const IntentBody = ({
+  onSubmit,
+  proposal,
+}: {
+  onSubmit: Function;
+  proposal: Proposal | any;
+}) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleButtonClick = async () => {
     setIsSubmitting(true);
-
-    await onSubmit();
-
-    setTimeout(() => {
-      setIsSubmitting(false);
-    }, 3000);
+    await onSubmit(proposal.documentTitle, proposal.documentID, proposal.id);
+    setIsSubmitting(false);
   };
 
   return (
@@ -58,9 +63,13 @@ const IntentBody = ({ onSubmit }: { onSubmit: Function }) => {
             variant={"default"}
             className={cn("bg-zinc-800 text-white hover:bg-zinc-700 w-full")}
             // onClick={handleButtonClick}
-            disabled={isSubmitting}
+            disabled={
+              isSubmitting || (proposal as Proposal).status !== "active"
+            }
           >
-            Vote
+            {(proposal as Proposal).status !== "active"
+              ? proposal.status
+              : "Vote"}
           </Button>
           <Button
             variant={"default"}

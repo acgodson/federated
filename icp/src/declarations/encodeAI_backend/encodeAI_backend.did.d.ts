@@ -24,7 +24,7 @@ export interface HttpResponsePayload {
 export interface Main {
   'addDocument' : ActorMethod<
     [string, string],
-    [[] | [Principal], [] | [string]]
+    [] | [[Principal, string, bigint]]
   >,
   'addVector' : ActorMethod<
     [Principal, string, string, bigint, bigint, Array<number>],
@@ -32,10 +32,6 @@ export interface Main {
   >,
   'closeProposal' : ActorMethod<[bigint], undefined>,
   'createEmbeddings' : ActorMethod<[string], string>,
-  'createProposal' : ActorMethod<
-    [string, Array<Uint8Array | number[]>, bigint],
-    bigint
-  >,
   'deployDIP20' : ActorMethod<[], Principal>,
   'documentIDToTitle' : ActorMethod<[string], [] | [string]>,
   'getChunk' : ActorMethod<[FileId__1, bigint, Principal], [] | [string]>,
@@ -47,6 +43,18 @@ export interface Main {
   'getProposalStatus' : ActorMethod<
     [bigint],
     { 'status' : [] | [ProposalState] }
+  >,
+  'getProposals' : ActorMethod<
+    [],
+    Array<
+      {
+        'id' : bigint,
+        'method' : string,
+        'threshold' : bigint,
+        'proposer' : Principal,
+        'documentID' : string,
+      }
+    >
   >,
   'getVectors' : ActorMethod<
     [Principal],

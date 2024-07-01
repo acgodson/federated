@@ -14,7 +14,6 @@ import { Label } from "../atoms/label";
 import { TextArea } from "../atoms/textArea";
 import { encodeAI_backend } from "../../../../../declarations/encodeAI_backend";
 
-
 const NewProposalIntent = () => {
   const [title, setTitle] = useState<string>("");
   const [content, setContent] = useState<string>("");
@@ -68,7 +67,9 @@ const NewProposalIntent = () => {
     <Dialog>
       <div className="flex justify-between gap-4">
         <div className="flex justify-between gap-3">
-          <p>token cannister: <span className="text-red-500">{token}</span></p>
+          <p>
+            token cannister: <span className="text-red-500">{token}</span>
+          </p>
         </div>
         <div className="flex justify-between gap-3">
           <Button
@@ -96,13 +97,13 @@ const NewProposalIntent = () => {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 flex-col w-full">
           <div className="space-y-2  w-full">
-            <Label>To</Label>
+            <Label>Title</Label>
             <div className="flex w-full">
               <Input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Amount"
+                placeholder="Document title"
               />
             </div>
           </div>

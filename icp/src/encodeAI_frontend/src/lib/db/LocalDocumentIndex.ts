@@ -127,7 +127,8 @@ export class LocalDocumentIndex extends LocalIndex {
   public async closePropsal(
     cannisterId: string,
     docTitle: string,
-    docId: string
+    docId: string,
+    proposalID: bigint
   ): Promise<any> {
     const recoveredChunks = await encodeAI_backend.getChunks(
       docId,
@@ -138,6 +139,10 @@ export class LocalDocumentIndex extends LocalIndex {
     if (recoveredChunks[0]) {
       const content = recoveredChunks[0];
       const result = await this.upsertDocument(docId, docTitle, content);
+
+      //delete proposal
+      await encodeAI_backend.closeProposal(proposalID);
+
       return result;
     }
   }

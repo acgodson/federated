@@ -45,7 +45,7 @@ export const idlFactory = ({ IDL }) => {
   const Main = IDL.Service({
     'addDocument' : IDL.Func(
         [IDL.Text, IDL.Text],
-        [IDL.Opt(IDL.Principal), IDL.Opt(IDL.Text)],
+        [IDL.Opt(IDL.Tuple(IDL.Principal, IDL.Text, IDL.Nat))],
         [],
       ),
     'addVector' : IDL.Func(
@@ -62,11 +62,6 @@ export const idlFactory = ({ IDL }) => {
       ),
     'closeProposal' : IDL.Func([IDL.Nat], [], []),
     'createEmbeddings' : IDL.Func([IDL.Text], [IDL.Text], []),
-    'createProposal' : IDL.Func(
-        [IDL.Text, IDL.Vec(IDL.Vec(IDL.Nat8)), IDL.Nat],
-        [IDL.Nat],
-        [],
-      ),
     'deployDIP20' : IDL.Func([], [IDL.Principal], []),
     'documentIDToTitle' : IDL.Func([IDL.Text], [IDL.Opt(IDL.Text)], []),
     'getChunk' : IDL.Func(
@@ -90,6 +85,21 @@ export const idlFactory = ({ IDL }) => {
     'getProposalStatus' : IDL.Func(
         [IDL.Nat],
         [IDL.Record({ 'status' : IDL.Opt(ProposalState) })],
+        [],
+      ),
+    'getProposals' : IDL.Func(
+        [],
+        [
+          IDL.Vec(
+            IDL.Record({
+              'id' : IDL.Nat,
+              'method' : IDL.Text,
+              'threshold' : IDL.Nat,
+              'proposer' : IDL.Principal,
+              'documentID' : IDL.Text,
+            })
+          ),
+        ],
         [],
       ),
     'getVectors' : IDL.Func(

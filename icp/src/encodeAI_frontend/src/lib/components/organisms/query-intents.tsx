@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { PlaceholdersAndVanishInput } from "../atoms/query-input";
+import imgUrl from "/logo2.svg";
 
 import QueryResponse from "./query-response";
 
@@ -58,14 +59,20 @@ const QueryIntents = () => {
     <div className="flex flex-col justify-between items-center gap-10 min-h-60">
       {interactions.length === 0 ? (
         <>
-          <h2 className="text-xl text-center sm:text-3xl text-black">
-            Clanopedia!...
-          </h2>
           <img
+            alt="logo-icp"
+            src={imgUrl}
+            style={{
+              height: "80px",
+              width: "auto",
+            }}
+          />
+          <img
+            className="mt-[-10]"
             alt="query-db"
             src="https://illustrations.popsy.co/pink/business-success-chart.svg"
-            width={400}
-            height={400}
+            width={300}
+            height={300}
           />
         </>
       ) : (
