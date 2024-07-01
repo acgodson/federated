@@ -1,0 +1,78 @@
+type VectorData = 
+ record {
+   documentId: FileId;
+   endPos: int;
+   startPos: int;
+   vector: vec float64;
+   vectorId: text;
+ };
+type TxReceipt = 
+ variant {
+   err: variant {
+          InsufficientAllowance;
+          InsufficientBalance;
+          Unauthorized;
+        };
+   ok: nat;
+ };
+type TransformArgs = 
+ record {
+   context: blob;
+   response: HttpResponsePayload;
+ };
+type ProposalState = 
+ variant {
+   active;
+   approved;
+   cancelled;
+ };
+type Main = 
+ service {
+   addDocument: (text, text) -> (opt principal, opt text);
+   addVector: (principal, text, text, nat, nat, vec float64) -> (opt text);
+   closeProposal: (nat) -> ();
+   createEmbeddings: (text) -> (text);
+   createProposal: (text, vec blob, nat) -> (nat);
+   deployDIP20: () -> (principal);
+   documentIDToTitle: (text) -> (opt text);
+   getChunk: (FileId__1, nat, principal) -> (opt text);
+   getChunks: (FileId__1, principal) -> (opt text);
+   getDIP20Principal: () -> (opt principal) query;
+   getDocumentID: (text, principal) -> (opt text);
+   getIndexInfo: (principal) -> (opt vec FileInfo);
+   getPrincipal: () -> (opt text);
+   getProposalStatus: (nat) -> (record {status: opt ProposalState;});
+   getVectors: (principal) -> (opt record {items: vec VectorData;});
+   mintToken: () -> (TxReceipt);
+   titleToDocumentID: (text) -> (opt text);
+   transform: (TransformArgs) -> (CanisterHttpResponsePayload) query;
+   vote: (nat, bool) -> ();
+   wallet_receive: () -> ();
+ };
+type HttpResponsePayload = 
+ record {
+   body: vec nat8;
+   headers: vec HttpHeader;
+   status: nat;
+ };
+type HttpHeader = 
+ record {
+   name: text;
+   value: text;
+ };
+type FileInfo = 
+ record {
+   chunkCount: nat;
+   fileId: text;
+   name: text;
+   size: nat;
+ };
+type FileId__1 = text;
+type FileId = text;
+type CanisterHttpResponsePayload = 
+ record {
+   body: vec nat8;
+   headers: vec HttpHeader;
+   status: nat;
+ };
+service : () -> Main
