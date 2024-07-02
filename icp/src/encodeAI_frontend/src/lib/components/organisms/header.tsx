@@ -1,4 +1,5 @@
 import NavGroup from "../molecules/nav-group";
+import { ChevronDown, Github } from "lucide-react";
 
 import { useMemo, useState } from "react";
 
@@ -33,8 +34,15 @@ const Header = ({ className }: { className?: string }) => {
     <div
       className={` flex justify-between items-center px-4 min-h-[70px] bg-transparent pr-8 ${className}`}
     >
-      {/* <img src="/logo.svg" alt="" /> */}
-      <p className=" text-4xl">📙</p>
+      <a
+        className="flex space-x-2 text-md"
+        target="_blank"
+        href="https://github.com/acgodson/clanopedia"
+      >
+        <Github />
+        <p className="">Source</p>
+      </a>
+
       <NavGroup navs={navs} />
     </div>
   );

@@ -8,6 +8,7 @@ import Nat "mo:base/Nat";
 import Text "mo:base/Text";
 import Array "mo:base/Array";
 import Blob "mo:base/Blob";
+import Iter "mo:base/Iter";
 
 import DAO "./DAO/DAO";
 import Storage "./Storage/Storage";
@@ -250,7 +251,7 @@ shared ({ caller = owner }) actor class Main() {
         transformed;
     };
 
-    public func createEmbeddings(words : Text) : async Text {
+    public func createEmbeddings(words : [Text]) : async Text {
         let ic : HTTPTypes.IC = actor ("aaaaa-aa");
         let url = "https://886e-197-210-84-76.ngrok-free.app/api/embed";
         let idempotency_key : Text = generateUUID();
@@ -259,9 +260,19 @@ shared ({ caller = owner }) actor class Main() {
             { name = "Idempotency-Key"; value = idempotency_key },
         ];
 
-        let request_body_json : Text = "{ \"words\" : \"" # words # "\" }";
+        // Construct the JSON string representation of the array
+        var words_json = "[" # "\"" # words[0] # "\"";
+        for (word in Iter.range(1, Array.size(words) - 1)) {
+            words_json #= ",\"" # words[word] # "\"";
+        };
+        words_json #= "]";
+
+        let request_body_json : Text = "{\"words\":" # words_json # "}";
+        Debug.print("Request Body JSON: " # request_body_json);
+
+
         let request_body_as_Blob : Blob = Text.encodeUtf8(request_body_json);
-        let request_body_as_nat8 : [Nat8] = Blob.toArray(request_body_as_Blob); 
+        let request_body_as_nat8 : [Nat8] = Blob.toArray(request_body_as_Blob);
 
         // 2.2.1 Transform context
         let transform_context : HTTPTypes.TransformContext = {
@@ -308,14 +319,13 @@ shared ({ caller = owner }) actor class Main() {
 
 
         // Construct request body based on context presence
-    let request_body_json : Text = if (context == "") {
-        "{ \"prompt\" : \"" # prompt # "\" }";
-    } else {
-        "{ \"prompt\" : \"" # prompt # "\", \"context\" : \"" # context # "\" }";
-    };
+        let request_body_json : Text = if (context == "") {
+            "{ \"prompt\" : \"" # prompt # "\" }";
+        } else {
+            "{ \"prompt\" : \"" # prompt # "\", \"context\" : \"" # context # "\" }";
+        };
 
-
-          Debug.print("query request body: " # request_body_json);
+        Debug.print("query request body: " # request_body_json);
 
         let request_body_as_Blob : Blob = Text.encodeUtf8(request_body_json);
         let request_body_as_nat8 : [Nat8] = Blob.toArray(request_body_as_Blob);

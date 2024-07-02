@@ -31,7 +31,7 @@ export interface Main {
     [] | [string]
   >,
   'closeProposal' : ActorMethod<[bigint], undefined>,
-  'createEmbeddings' : ActorMethod<[string], string>,
+  'createEmbeddings' : ActorMethod<[Array<string>], string>,
   'deployDIP20' : ActorMethod<[], Principal>,
   'documentIDToTitle' : ActorMethod<[string], [] | [string]>,
   'fetchQueryResponse' : ActorMethod<[string, string], string>,

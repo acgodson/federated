@@ -351,7 +351,7 @@ export class LocalIndex {
         console.log("no vectors found", vectors);
         return;
       }
-      console.log("index data", vectors[0]);
+      // console.log("index data", vectors[0]);
 
       if (vectors[0]) {
         const result = vectors[0].items;

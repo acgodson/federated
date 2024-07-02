@@ -42,7 +42,7 @@ const NewProposalIntent = () => {
         title,
         content as string
       );
-      alert("document added")
+      alert("document added");
       console.log(result);
     } catch (e) {
       setIsSubmitting(false);
@@ -69,14 +69,20 @@ const NewProposalIntent = () => {
     }
   };
 
+  function formatText(content: string) {
+    let formattedContent = content.replace(/\n\s*\n/g, "\n");
+    // formattedContent = formattedContent.replace(/\n/g, " ");
+    return formattedContent;
+  }
+
   useEffect(() => {
     if (file) {
       const reader = new FileReader();
       reader.onload = async () => {
         const _content = reader.result as ArrayBuffer;
         const textContent = await extractTextFromFile(_content);
-        // console.log(content);
-        setContent(textContent);
+        console.log("fetched content", content);
+        setContent(formatText(textContent));
       };
       reader.readAsArrayBuffer(file);
     }
@@ -127,7 +133,6 @@ const NewProposalIntent = () => {
           </p>
         </div>
 
-    
         {isError && (
           <>
             <Alert title={errorTitle}>

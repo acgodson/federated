@@ -53,7 +53,7 @@ const IntentsFeed = () => {
       }
 
       const _proposals = await encodeAI_backend.getProposals();
-      if (_proposals) {
+      if (_proposals && _proposals.length > 0) {
         // Reformat proposals before updating the state
         const formattedProposals = await Promise.all(
           _proposals.map(async (proposal) => {
@@ -78,11 +78,11 @@ const IntentsFeed = () => {
             };
           })
         );
-
         setProposals(formattedProposals);
+        setFetching(false);
+      } else {
+        setFetching(false);
       }
-
-      setFetching(false);
     } catch (e) {
       console.log("error fetching proposal", e);
       setFetching(false);

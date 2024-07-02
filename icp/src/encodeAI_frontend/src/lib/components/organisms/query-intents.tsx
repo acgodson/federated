@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Loader } from "lucide-react";
 import { PlaceholdersAndVanishInput } from "../atoms/query-input";
 import imgUrl from "/logo2.svg";
+import art from "/art.svg";
 
 import QueryResponse from "./query-response";
 import { encodeAI_backend } from "../../../../../declarations/encodeAI_backend";
@@ -61,13 +62,11 @@ const QueryIntents = () => {
 
   const similarityCheck = async (promptEmbedding: any) => {
     // Initialize an array to store the results
-    const queryResults = [];
-    let chunkSize = 502;
+    const queryResults: any = [];
+    let chunkSize = 1500;
     const _principal = await encodeAI_backend.getPrincipal();
     if (_principal[0]) {
-      // setPrincipal(_principal[0]);
       const principal = Principal.fromText(_principal[0]);
-
       const isCatalog = await loadIsCatalog(principal);
       const indexInstance = new LocalDocumentIndex({
         indexName: _principal[0],
@@ -93,7 +92,7 @@ const QueryIntents = () => {
         };
 
         // Render sections if format is "sections"
-        const tokens = 200;
+        const tokens = 500;
         const sectionCount = 1;
         const overlap = true;
         const sections = await result.renderSections(
@@ -113,6 +112,7 @@ const QueryIntents = () => {
 
       return queryResults;
     }
+    return queryResults;
   };
 
   const getAIResponse = async (
@@ -131,36 +131,38 @@ const QueryIntents = () => {
           references: response.references,
         };
       } else {
-        //perform similarity check and resend request
+        //do similarity check and resend request
         const fetchContext = await similarityCheck(response.embedding[0]);
         console.log(fetchContext);
-        if (fetchContext) {
+        if (fetchContext && fetchContext.length > 0) {
           // Map through fetchContext and resolve promises
           const contextArray = await Promise.all(
-            fetchContext.map(async (x) => {
+            fetchContext.map(async (x: any) => {
               const id = await getDocumentID(x.tile);
               return {
                 tile: x.tile,
                 id: id,
                 ...x,
                 sections: x.sections.map((y: any) => ({
-                  text: y.text,
+                  text: y.text.replace(/\n+/g, "\n").replace(/\n/g, "\\n").replace(/"/g, '\\"'),
                   tokens: y.tokens,
                 })),
               };
             })
           );
           // Now you can use contextArray as needed
-          console.log("fine-tuned context", JSON.stringify(contextArray));
-          const x = await encodeAI_backend.fetchQueryResponse(input, 
-           JSON.stringify(contextArray),
+          console.log("fine-tuned context",     contextArray[0].sections[0].text);
+
+          const x = await encodeAI_backend.fetchQueryResponse(
+            input,
+            contextArray[0].sections[0].text
           );
           const newResponse = JSON.parse(x);
           console.log("new response", newResponse);
-          // return {
-          //   text: newResponse.text,
-          //   references: newResponse.references,
-          // };
+          return {
+            text: newResponse.text,
+            references: newResponse.references,
+          };
         }
       }
       return {
@@ -224,7 +226,7 @@ const QueryIntents = () => {
           <img
             className="mt-[-10]"
             alt="query-db"
-            src="https://illustrations.popsy.co/pink/business-success-chart.svg"
+            src={art} 
             width={300}
             height={300}
           />

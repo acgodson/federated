@@ -61,7 +61,7 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'closeProposal' : IDL.Func([IDL.Nat], [], []),
-    'createEmbeddings' : IDL.Func([IDL.Text], [IDL.Text], []),
+    'createEmbeddings' : IDL.Func([IDL.Vec(IDL.Text)], [IDL.Text], []),
     'deployDIP20' : IDL.Func([], [IDL.Principal], []),
     'documentIDToTitle' : IDL.Func([IDL.Text], [IDL.Opt(IDL.Text)], []),
     'fetchQueryResponse' : IDL.Func([IDL.Text, IDL.Text], [IDL.Text], []),

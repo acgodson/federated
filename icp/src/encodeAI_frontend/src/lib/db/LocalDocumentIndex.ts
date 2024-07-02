@@ -197,12 +197,14 @@ export class LocalDocumentIndex extends LocalIndex {
 
     // Generate embeddings for chunks
     const embeddings: number[][] = [];
-    for (const batch of chunkBatches) {
+    for (const rawBatch of chunkBatches) {
       let response: any;
-      try {
-        const x = await encodeAI_backend.createEmbeddings(String(batch));
-        response = JSON.parse(x);
+      const batch = this.formatBatch(rawBatch);
+      console.log("this batch", batch);
 
+      try {
+        const x = await encodeAI_backend.createEmbeddings(batch);
+        response = JSON.parse(x);
         console.log(response);
       } catch (err: unknown) {
         throw new Error(
@@ -300,7 +302,7 @@ export class LocalDocumentIndex extends LocalIndex {
     options = Object.assign(
       {
         maxDocuments: 10,
-        maxChunks: 50,
+        maxChunks: 1500,
       },
       options
     );
@@ -317,7 +319,7 @@ export class LocalDocumentIndex extends LocalIndex {
       options.filter as any
     );
 
-    console.log("this is the returned results", results);
+    console.log("returned query embedding", results);
 
     // Group chunks by document
     const documentChunks: {
@@ -381,6 +383,10 @@ export class LocalDocumentIndex extends LocalIndex {
         `Error saving document catalog: ${(err as any).toString()}`
       );
     }
+  }
+
+  public formatBatch(batch : any[]) {
+    return batch.map(item => item.replace(/"/g, '\\"'));
   }
 
   protected async loadIndexData(): Promise<void> {

@@ -35,7 +35,7 @@ type Main =
                                      });
    addVector: (principal, text, text, nat, nat, vec float64) -> (opt text);
    closeProposal: (nat) -> ();
-   createEmbeddings: (text) -> (text);
+   createEmbeddings: (vec text) -> (text);
    deployDIP20: () -> (principal);
    documentIDToTitle: (text) -> (opt text);
    fetchQueryResponse: (text, text) -> (text);
