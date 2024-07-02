@@ -13,19 +13,74 @@ import { Input } from "../atoms/input";
 import { Label } from "../atoms/label";
 import { TextArea } from "../atoms/textArea";
 import { encodeAI_backend } from "../../../../../declarations/encodeAI_backend";
+import { extractTextFromFile } from "../../../utils";
+import { Alert, AlertDescription } from "../atoms/alert";
+import { Content } from "@radix-ui/react-dialog";
+import { Principal } from "@dfinity/principal";
 
 const NewProposalIntent = () => {
+  const [file, setFile] = useState<any | File>();
+  const [content, setContent] = useState<string | null>();
   const [title, setTitle] = useState<string>("");
-  const [content, setContent] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(false);
   const [token, setToken] = useState<string>("");
   const [status, setStatus] = useState("");
+  const [isError, setIsError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [errorTitle, setErrorTitle] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    if (title.length < 2 || (content && content.length < 4)) {
+      console.log("invalid paramaters");
+      return;
+    }
+    try {
+      const result = await encodeAI_backend.addDocument(
+        title,
+        content as string
+      );
+      alert("document added")
+      console.log(result);
+    } catch (e) {
+      setIsSubmitting(false);
+    }
   };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      const file = event.target.files[0];
+      if (
+        (file && file.type === "application/msword") ||
+        (file &&
+          file.type ===
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+      ) {
+        setFile(file);
+      } else {
+        setIsError(true);
+        setErrorTitle("Unsupported File Format");
+        setErrorMessage(
+          "Currently, we only accept documents in .doc or .docx format."
+        );
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const _content = reader.result as ArrayBuffer;
+        const textContent = await extractTextFromFile(_content);
+        // console.log(content);
+        setContent(textContent);
+      };
+      reader.readAsArrayBuffer(file);
+    }
+  }, [file, content, setContent]);
 
   const handleMint = async () => {
     try {
@@ -71,6 +126,16 @@ const NewProposalIntent = () => {
             token cannister: <span className="text-red-500">{token}</span>
           </p>
         </div>
+
+    
+        {isError && (
+          <>
+            <Alert title={errorTitle}>
+              <AlertDescription>{errorMessage}</AlertDescription>
+            </Alert>
+          </>
+        )}
+
         <div className="flex justify-between gap-3">
           <Button
             variant="default"
@@ -110,12 +175,27 @@ const NewProposalIntent = () => {
 
           <div className="space-y-2  w-full">
             <Label htmlFor="content">Content</Label>
-            <TextArea
-              id="content"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Document content"
-            />
+            {content ? (
+              <TextArea
+                id="content"
+                value={content}
+                rows={4}
+                cols={4}
+                readOnly={true}
+                style={{
+                  height: "100px",
+                  overflowY: "auto",
+                }}
+                // onChange={(e) => setContent(e.target.value)}
+                placeholder="Document content"
+              />
+            ) : (
+              <Input
+                type="file"
+                onChange={handleFileChange}
+                placeholder="Select docx"
+              />
+            )}
           </div>
 
           <Button

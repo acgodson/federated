@@ -54,7 +54,7 @@ export class LocalDocumentResult extends LocalDocument {
         const chunks: SectionChunk[]  = [];
         for (let i = 0; i < this._chunks.length; i++) {
             const chunk = this._chunks[i];
-            const startPos = chunk.item.metadata.startPos;
+            const startPos = 0 // chunk.item.metadata.startPos === 1 ? 0 : chunk.item.metadata.startPos;
             const endPos = chunk.item.metadata.endPos;
             const chunkText = text.substring(startPos, endPos + 1);
             const tokens = this._tokenizer.encode(chunkText);

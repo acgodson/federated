@@ -261,7 +261,6 @@ export class LocalIndex {
   public async queryItems<TMetadata = Record<string, MetadataTypes>>(
     vector: number[],
     topK: number,
-    apiKey: string,
     filter?: MetadataFilter
   ): Promise<QueryResult<TMetadata>[]> {
     await this.loadIndexData();
@@ -281,7 +280,7 @@ export class LocalIndex {
         vector,
         norm,
         item.vector,
-        item.norm
+        item.norm ? item.norm : 1 //remove after demo and replace from contract
       );
       distances.push({ index: i, distance: distance });
     }

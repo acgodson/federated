@@ -11,7 +11,7 @@ import { encodeAI_backend } from "../../../../../declarations/encodeAI_backend";
 import { Principal } from "@dfinity/principal";
 import { LocalDocumentIndex } from "../../db/LocalDocumentIndex";
 import { Colorize } from "../../../utils/Colorize";
-import { Clock, Hourglass, Loader } from "lucide-react";
+import { Loader } from "lucide-react";
 
 export interface Proposal {
   id: number;
@@ -112,10 +112,11 @@ const IntentsFeed = () => {
     }
     return responseCID;
   };
+
   const getDocumentTitle = async (docId: string) => {
     let responseCID = "";
     try {
-      const info = await encodeAI_backend.titleToDocumentID(docId);
+      const info = await encodeAI_backend.documentIDToTitle(docId);
       if (info[0]) {
         responseCID = info[0];
       }
@@ -170,6 +171,12 @@ const IntentsFeed = () => {
     }
   };
 
+  const submitVote = async (proposalId: bigint, choice: boolean) => {
+    const voteResult = await encodeAI_backend.vote(BigInt(proposalId), choice);
+    console.log(voteResult);
+    alert("voting succeded: ");
+  };
+
   useEffect(() => {
     fetchStoragePrincipal();
   }, []);
@@ -195,7 +202,11 @@ const IntentsFeed = () => {
             </AccordionTrigger>
             <AccordionContent>
               {proposals && (
-                <IntentBody onSubmit={closeProposal} proposal={proposal} />
+                <IntentBody
+                  onSubmit={closeProposal}
+                  proposal={proposal}
+                  onVote={submitVote}
+                />
               )}
             </AccordionContent>
           </AccordionItem>

@@ -38,6 +38,7 @@ type Main =
    createEmbeddings: (text) -> (text);
    deployDIP20: () -> (principal);
    documentIDToTitle: (text) -> (opt text);
+   fetchQueryResponse: (text, text) -> (text);
    getChunk: (FileId__1, nat, principal) -> (opt text);
    getChunks: (FileId__1, principal) -> (opt text);
    getDIP20Principal: () -> (opt principal) query;

@@ -13,7 +13,9 @@ const IntentsHome = () => {
   return (
     <LayoutWrapper>
       <GlassContainer>
-        <p className="pt-4 px-4 pb-2 font-semibold text-xl">Clanopedia</p>
+        <p style={{
+            fontFamily: 'monospace'
+        }} className="pt-4 px-4 pb-2 font-semibold text-xl">CLANOPEDIA</p>
         <Tabs defaultValue="query">
           <TabsList className="grid w-full grid-cols-2 gap-2">
             <TabsTrigger value="query">Query</TabsTrigger>

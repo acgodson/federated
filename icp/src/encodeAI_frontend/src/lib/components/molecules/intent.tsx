@@ -8,6 +8,7 @@ import { cn } from "../../../utils";
 
 import { Alert, AlertDescription } from "../atoms/alert";
 import { Proposal } from "../organisms/docs-feed";
+import NewVoteIntent from "./new-vote";
 
 const IntentHead = ({ proposal }: { proposal: Proposal | any }) => {
   return (
@@ -29,17 +30,26 @@ const IntentHead = ({ proposal }: { proposal: Proposal | any }) => {
 
 const IntentBody = ({
   onSubmit,
+  onVote,
   proposal,
 }: {
   onSubmit: Function;
+  onVote: Function;
   proposal: Proposal | any;
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [voting, setVoting] = useState(false);
 
   const handleButtonClick = async () => {
     setIsSubmitting(true);
     await onSubmit(proposal.documentTitle, proposal.documentID, proposal.id);
     setIsSubmitting(false);
+  };
+
+  const handleVoteClick = async (choice: boolean) => {
+    setVoting(true);
+    await onVote(proposal.id, choice);
+    setVoting(false);
   };
 
   return (
@@ -59,18 +69,18 @@ const IntentBody = ({
             className=" bg-slate-200 hidden sm:block"
             orientation="vertical"
           />
-          <Button
-            variant={"default"}
-            className={cn("bg-zinc-800 text-white hover:bg-zinc-700 w-full")}
-            // onClick={handleButtonClick}
-            disabled={
-              isSubmitting || (proposal as Proposal).status !== "active"
+
+          <NewVoteIntent
+            isDisabled={voting || (proposal as Proposal).status !== "active"}
+            title={
+              (proposal as Proposal).status !== "active"
+                ? proposal.status
+                : "Vote"
             }
-          >
-            {(proposal as Proposal).status !== "active"
-              ? proposal.status
-              : "Vote"}
-          </Button>
+            docId={proposal.documentID}
+            onSubmit={handleVoteClick}
+          />
+
           <Button
             variant={"default"}
             className={cn("bg-zinc-800 text-white hover:bg-zinc-700 w-full")}

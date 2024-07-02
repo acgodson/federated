@@ -229,7 +229,7 @@ export class LocalDocumentIndex extends LocalIndex {
         const chunkMetadata: DocumentChunkMetadata = Object.assign(
           {
             documentId,
-            startPos: chunk.startPos,
+            startPos: chunk.startPos === 0 ? 1 : chunk.startPos,
             endPos: chunk.endPos,
           },
           metadata
@@ -275,6 +275,8 @@ export class LocalDocumentIndex extends LocalIndex {
     for (const documentId in docs) {
       const title = await this.getDocumentUri(documentId);
 
+      console.log("found title be like", title);
+
       //uri is like the title here right?
 
       const documentResult = new LocalDocumentResult(
@@ -291,14 +293,9 @@ export class LocalDocumentIndex extends LocalIndex {
   }
 
   public async queryDocuments(
-    query: string,
+    queryEmbedding: any[],
     options?: DocumentQueryOptions
   ): Promise<LocalDocumentResult[]> {
-    // Ensure embeddings configured
-    if (!this._embeddings) {
-      throw new Error(`Embeddings model not configured.`);
-    }
-
     // Ensure options are defined
     options = Object.assign(
       {
@@ -308,31 +305,19 @@ export class LocalDocumentIndex extends LocalIndex {
       options
     );
 
-    // Generate embeddings for query
-    let embeddings: EmbeddingsResponse;
-    try {
-      embeddings = await this._embeddings.createEmbeddings(
-        query.replace(/\n/g, " ")
-      );
-    } catch (err: unknown) {
-      throw new Error(
-        `Error generating embeddings for query: ${(err as any).toString()}`
-      );
-    }
-
     // Check for error
-    if (embeddings.status != "success") {
-      throw new Error(
-        `Error generating embeddings for query: ${embeddings.message}`
-      );
+    if (!queryEmbedding) {
+      throw new Error(`no embeddings  found for query`);
     }
 
     // Query index for chunks
     const results = await this.queryItems<DocumentChunkMetadata>(
-      embeddings.output![0],
+      queryEmbedding,
       options.maxChunks!,
       options.filter as any
     );
+
+    console.log("this is the returned results", results);
 
     // Group chunks by document
     const documentChunks: {

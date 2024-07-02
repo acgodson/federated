@@ -64,6 +64,7 @@ export const idlFactory = ({ IDL }) => {
     'createEmbeddings' : IDL.Func([IDL.Text], [IDL.Text], []),
     'deployDIP20' : IDL.Func([], [IDL.Principal], []),
     'documentIDToTitle' : IDL.Func([IDL.Text], [IDL.Opt(IDL.Text)], []),
+    'fetchQueryResponse' : IDL.Func([IDL.Text, IDL.Text], [IDL.Text], []),
     'getChunk' : IDL.Func(
         [FileId__1, IDL.Nat, IDL.Principal],
         [IDL.Opt(IDL.Text)],

@@ -34,6 +34,7 @@ export interface Main {
   'createEmbeddings' : ActorMethod<[string], string>,
   'deployDIP20' : ActorMethod<[], Principal>,
   'documentIDToTitle' : ActorMethod<[string], [] | [string]>,
+  'fetchQueryResponse' : ActorMethod<[string, string], string>,
   'getChunk' : ActorMethod<[FileId__1, bigint, Principal], [] | [string]>,
   'getChunks' : ActorMethod<[FileId__1, Principal], [] | [string]>,
   'getDIP20Principal' : ActorMethod<[], [] | [Principal]>,
