@@ -1,5 +1,7 @@
 ## Clanopedia - Encode Web3_AI
 
+`Project is in development and  updates have breaking changes`
+
 ### Overview
 
 This project allows AI models to retrieve vectors indexed on-chain in ICP canisters. The data is controlled by a DAO governance mechanism, ensuring a decentralized and tamper-proof process for adding and retrieving vectors.
